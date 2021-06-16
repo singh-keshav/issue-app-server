@@ -1,9 +1,20 @@
 const mongoose = require("mongoose");
 
 const nowUnix = () => Date.now();
-const unixToString = (unix) => {
+const unixToStringDate = (unix) => {
   const d = new Date(unix);
   return `${d.getDate().toString().padStart(2, "0")}-${d
+    .getMonth()
+    .toString()
+    .padStart(2, "0")}-${d.getFullYear()}`;
+};
+
+const unixToStringUpdate = (unix) => {
+  const d = new Date(unix);
+  return `  ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}, ${d
+    .getDate()
+    .toString()
+    .padStart(2, "0")}-${d
     .getMonth()
     .toString()
     .padStart(2, "0")}-${d.getFullYear()}`;
@@ -31,8 +42,8 @@ IssueSchema.virtual("id").get(function () {
 IssueSchema.virtual("timestamps").get(function () {
   console.log(this);
   return {
-    createdOn: unixToString(this.createdOn),
-    updatedOn: unixToString(this.updatedOn),
+    createdOn: unixToStringDate(this.createdOn),
+    updatedOn: unixToStringUpdate(this.updatedOn),
   };
 });
 

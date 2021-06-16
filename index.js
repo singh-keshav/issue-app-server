@@ -41,14 +41,17 @@ app.post("/issue", async (req, res) => {
 
 app.put("/issue/:id", async (req, res) => {
   delete req.body.timestamps;
-  await IssueModel.updateOne(
+  const issue = await IssueModel.findOneAndUpdate(
     { _id: req.params.id },
     {
       ...req.body,
       updatedOn: Date.now(),
+    },
+    {
+      new: true,
     }
   );
-  res.status(200).json(req.body);
+  res.status(200).json(issue);
 });
 
 app.delete("/issue/:id", async (req, res) => {
