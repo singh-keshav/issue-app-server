@@ -1,6 +1,19 @@
-const http = require("http");
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
+const IssueModel = require("./model");
+
+mongoose.connect("mongodb://localhost:27017/isssueAppDB", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const db = mongoose.connection;
+
+db.on("error", console.error.bind(console, "connection error:"));
+db.once("open", function () {
+  console.log("hurray connected to db");
+});
 
 const app = express();
 const port = 7000;
@@ -8,62 +21,41 @@ const port = 7000;
 app.use(express.json());
 app.use(cors());
 
-let issues = [];
-
-app.get("/issue", (req, res) => {
+app.get("/issue", async (req, res) => {
+  const issues = await IssueModel.find();
   res.json(issues);
 });
 
-app.get("/issue/:id", (req, res) => {
-  const id = Number(req.params.id);
-  const issue = issues.find((issue) => issue.id === id);
+app.get("/issue/:id", async (req, res) => {
+  const issue = await IssueModel.findOne({ _id: req.params.id });
   res.json(issue);
 });
 
-app.post("/issue", (req, res) => {
-  const issue = req.body;
-  const date = new Date();
-  issue.createdOn =
-    date.getDate() + "-" + date.getMonth() + "-" + date.getFullYear();
-  issue.id = Date.now();
-  issue.updatedOn = "";
-  issues.push(issue);
-  res.json(issues);
+app.post("/issue", async (req, res) => {
+  delete req.body.id;
+  delete req.body.timestamps;
+  const issue = new IssueModel(req.body);
+  await issue.save();
+  res.json(issue);
 });
 
-app.put("/issue/:id", (req, res) => {
-  const newData = req.body;
-  const id = Number(req.params.id);
-  console.log(id);
-  const date = new Date();
-  // issues.forEach(issue => {
-  //   if (issue.id === id) {
-  //     // issue = { ...issue,...newData, updatedOn: date };
-  //     issue=newData;
-  //     issue.id=id;
-  //     issue.updatedOn=date;
-  //     console.log(issue);
-  //   }
-  // });
-  const index = issues.findIndex((issue) => issue.id === id);
-  issues[index] = {
-    ...issues[index],
-    ...newData,
-    updatedOn:
-      date.getDate() + "-" + date.getMonth() + "-" + date.getFullYear(),
-  };
-  console.log(issues);
-
-  res.status(200).json(issues);
+app.put("/issue/:id", async (req, res) => {
+  delete req.body.timestamps;
+  await IssueModel.updateOne(
+    { _id: req.params.id },
+    {
+      ...req.body,
+      updatedOn: Date.now(),
+    }
+  );
+  res.status(200).json(req.body);
 });
 
-app.delete("/issue/:id", (req, res) => {
-  const id = Number(req.params.id);
-
-  issues = issues.filter((issue) => issue.id !== id);
+app.delete("/issue/:id", async (req, res) => {
+  await IssueModel.deleteOne({ _id: req.params.id });
   res.json(200);
 });
 
 app.listen(port, () => {
-  console.log(`listening on port${port}`);
+  console.log(`Server listening on port: ${port}`);
 });
